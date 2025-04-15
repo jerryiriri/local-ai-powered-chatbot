@@ -1,0 +1,47 @@
+services:
+  backend:
+    build: .
+    container_name: chatbot-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - DATABASE_URL=sqlite:///./chat_history.db
+    volumes:
+      - ./backend/chat_history.db:/app/chat_history.db
+    depends_on:
+      - ollama
+    networks:
+      - chatbot-network
+
+  frontend:
+    build: .
+    container_name: chatbot-frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=http://backend:8000
+    command: streamlit run app/streamlit_app.py
+    depends_on:
+      - backend
+    networks:
+      - chatbot-network
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: chatbot-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - chatbot-network
+    # Keep the container running
+    tty: true
+
+volumes:
+  ollama_data:
+
+networks:
+  chatbot-network:
+    driver: bridge
